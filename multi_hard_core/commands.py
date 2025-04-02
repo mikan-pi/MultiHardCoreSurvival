@@ -112,6 +112,7 @@ def get_time(log: list):
     return log[0][9:], log[1][:-4]
 
 last_death_timestamp = 0
+start_time = datetime.now().timestamp()
 
 @tasks.loop(seconds=10)
 async def loop():
@@ -145,7 +146,7 @@ async def loop():
         extension_logger.error(e)
 
 async def restart_server():
-    global last_death_timestamp
+    global last_death_timestamp, start_time
     core_stop()
     while True:
         if is_running_server(extension_logger):
@@ -162,10 +163,16 @@ async def restart_server():
             shutil.rmtree(target_path)
         elif os.path.isfile(target_path):  # ファイルなら `del` を使う
             os.remove(target_path)
-    # ログ
-    extension_logger.info("restart server")
+    # 2分経過していなければ、2分までの秒数を出力
+    if get_timestamp(*get_time(get_log()[-1].split(" "))) - start_time < 120:
+        extension_logger.info(f"restart server in {120 - (get_timestamp(*get_time(get_log()[-1].split(' '))) - start_time)} seconds")
+        await asyncio.sleep(120 - (get_timestamp(*get_time(get_log()[-1].split(' '))) - start_time))
+    else:
+        extension_logger.info(f"restart server")
+        
     # ここまでのログを無効に
     last_death_timestamp = get_timestamp(*get_time(get_log()[-1].split(" ")))
+    start_time = last_death_timestamp
     # 再起動
     core_start()
 
