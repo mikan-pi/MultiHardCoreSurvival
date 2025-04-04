@@ -18,7 +18,7 @@ from __main__ import time
 # 直近のログを取得(get recent log)
 from __main__ import get_log
 # 各コマンドで権限データをセット/確認したい場合
-from __main__ import COMMAND_PERMISSION
+from __main__ import COMMAND_PERMISSION,user_permission
 # logger補助関数 await print_user(logger,user: discord.user) で利用者のログを残す
 from __main__ import print_user
 
@@ -54,6 +54,9 @@ else:
 @tree.command(name="set-threshold", description="許容する死亡回数を設定します")
 async def set_threshold(interaction: discord.Interaction, newthreshold: int):
     global threshold
+    if await user_permission(interaction.user) < 3:
+        await interaction.response.send_message(f"設定を変更する権限がありません。設定には権限3以上が必要です。")
+        return
     threshold = newthreshold
     await interaction.response.send_message(f"許容する死亡回数を{threshold}に設定しました")
 
